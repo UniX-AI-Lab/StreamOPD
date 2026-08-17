@@ -2,7 +2,7 @@
 
 **A Post-Training Recipe with Spatio-Temporal Cue Gating for Streaming Video Understanding**
 
-[**Project page**](https://unix-ai-lab.github.io/StreamOPD/) · [Install](docs/INSTALL.md) · [Data](docs/DATA.md) · [Training](docs/TRAINING.md) · [Evaluation](docs/EVALUATION.md) · [Method](docs/METHOD.md)
+[**Project page**](https://unix-ai-lab.github.io/StreamOPD/) · [**Model**](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate) · [Install](docs/INSTALL.md) · [Data](docs/DATA.md) · [Training](docs/TRAINING.md) · [Evaluation](docs/EVALUATION.md) · [Method](docs/METHOD.md)
 
 Streaming video understanding requires answering from the causally observed prefix of a
 video that is still unfolding. Most systems attack this with memory banks, retrieval, or
@@ -161,6 +161,22 @@ variants differ only in what you set:
 | `vzero.sh` | V-Zero (shuffled-video negative view) |
 | `afd.sh` | Asymmetric frame budget (appendix) |
 | `grpo.sh` | Teacher-free GRPO format-drift diagnostic |
+
+## Released checkpoint
+
+The ST-CueGate model is on the Hub as
+[`UniX-Lab/StreamOPD-4B-ST-CueGate`](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate).
+It is already in HuggingFace format, so the evaluators accept the repo id directly and no
+training or checkpoint merging is needed to reproduce its scores:
+
+```bash
+bash scripts/eval/run_all.sh UniX-Lab/StreamOPD-4B-ST-CueGate streamopd_release 0,1,2,3
+bash scripts/eval/score_all.sh streamopd_release
+```
+
+| Checkpoint | StreamingBench | OVO (excl. HLD) | Video-MME | LongVideoBench |
+|---|:---:|:---:|:---:|:---:|
+| `StreamOPD-4B-ST-CueGate` | 84.19 | 70.48 | 64.85 | 60.36 |
 
 ## Quick start
 
