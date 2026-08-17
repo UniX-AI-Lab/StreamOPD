@@ -1,8 +1,22 @@
+<div align="center">
+
 # StreamOPD
 
 **A Post-Training Recipe with Spatio-Temporal Cue Gating for Streaming Video Understanding**
 
-[**Project page**](https://unix-ai-lab.github.io/StreamOPD/) · [**Model**](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate) · [Install](docs/INSTALL.md) · [Data](docs/DATA.md) · [Training](docs/TRAINING.md) · [Evaluation](docs/EVALUATION.md) · [Method](docs/METHOD.md)
+<!-- Once the preprint is live, drop the arXiv and Daily Paper badges in here:
+[![arXiv](https://img.shields.io/badge/Paper-000000?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/XXXX.XXXXX)
+[![Daily Paper](https://img.shields.io/badge/Daily_Paper-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/papers/XXXX.XXXXX)
+-->
+
+[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=google-chrome&logoColor=white)](https://unix-ai-lab.github.io/StreamOPD/)
+[![GitHub](https://img.shields.io/badge/Code-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/UniX-AI-Lab/StreamOPD)
+[![Model](https://img.shields.io/badge/Model-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate)
+[![License](https://img.shields.io/badge/License-Apache_2.0-0040A1?style=for-the-badge)](LICENSE)
+
+[Install](docs/INSTALL.md) · [Data](docs/DATA.md) · [Training](docs/TRAINING.md) · [Evaluation](docs/EVALUATION.md) · [Method](docs/METHOD.md)
+
+</div>
 
 Streaming video understanding requires answering from the causally observed prefix of a
 video that is still unfolding. Most systems attack this with memory banks, retrieval, or
