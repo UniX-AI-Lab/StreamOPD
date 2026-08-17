@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StreamOPD — A Post-Training Recipe with Spatio-Temporal Cue Gating for Streaming Video Understanding</title>
+<meta name="description" content="StreamOPD fixes a memory-free recent-window streaming protocol and asks how far post-training alone can go. ST-CueGate gates on-policy distillation by the teacher's cue-versus-no-cue likelihood ratio.">
+<meta property="og:title" content="StreamOPD — Spatio-Temporal Cue Gating for Streaming Video Understanding">
+<meta property="og:description" content="A 4B student reaches 84.6 on StreamingBench and 69.3 OVO-Bench macro under a strictly memory-free four-frame context, passing its own 9B teacher.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="static/images/pipeline.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12100e; --ink-2:#3a352f; --ink-3:#6b6259; --line:#e2ddd4;
+  --paper:#fbfaf7; --paper-2:#f4f1ea; --card:#ffffff;
+  --gold:#9a7b3f; --gold-soft:#c9a961; --accent:#1f4e46;
+  --ok:#2f6f4f; --bad:#9b3d3d;
+  --max:1180px;
+  --serif:"Instrument Serif",Georgia,serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.72;font-weight:400;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 32px}
+a{color:inherit}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:60;background:rgba(251,250,247,.82);
+  backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid transparent;transition:border-color .3s}
+.nav.scrolled{border-bottom-color:var(--line)}
+.nav-in{max-width:var(--max);margin:0 auto;padding:0 32px;height:64px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{font-family:var(--serif);font-size:22px;letter-spacing:.01em;text-decoration:none;white-space:nowrap}
+.brand em{font-style:italic;color:var(--gold)}
+.nav-links{display:flex;gap:26px;list-style:none;margin:0;padding:0}
+.nav-links a{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  text-decoration:none;transition:color .2s;position:relative}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;width:0;height:1px;
+  background:var(--gold);transition:width .25s}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after,.nav-links a.active::after{width:100%}
+.nav-links a.active{color:var(--ink)}
+.nav-toggle{display:none;background:none;border:1px solid var(--line);border-radius:6px;
+  padding:6px 10px;font-size:13px;cursor:pointer;color:var(--ink-2)}
+
+/* ---------- hero ---------- */
+.hero{padding:86px 0 64px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 900px 420px at 50% -8%,rgba(154,123,63,.10),transparent 70%)}
+.hero-in{position:relative;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold);border:1px solid rgba(154,123,63,.32);
+  border-radius:100px;padding:7px 18px;margin-bottom:30px;background:rgba(255,255,255,.6)}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--gold-soft)}
+h1.title{font-family:var(--serif);font-weight:400;font-size:clamp(52px,9vw,104px);
+  line-height:.96;letter-spacing:-.02em;margin:0 0 18px}
+h1.title .accent{font-style:italic;color:var(--gold)}
+.subtitle{font-family:var(--serif);font-size:clamp(19px,2.5vw,27px);line-height:1.36;
+  color:var(--ink-2);max-width:790px;margin:0 auto 34px;font-weight:400}
+.authors{font-size:15.5px;color:var(--ink-2);max-width:800px;margin:0 auto 8px;line-height:2.05}
+.authors .who{white-space:nowrap;margin:0 3px}
+.authors sup{color:var(--gold);font-size:11px;font-weight:600;padding-left:1px}
+.affils{font-size:13.5px;color:var(--ink-3);max-width:800px;margin:6px auto 4px;line-height:1.9}
+.affils sup{color:var(--gold);font-weight:600;font-size:10.5px}
+.notes{font-size:12.5px;color:var(--ink-3);margin:4px 0 34px}
+
+.links{display:flex;flex-wrap:wrap;gap:13px;justify-content:center;margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:12px 26px;border-radius:100px;
+  font-size:14.5px;font-weight:500;text-decoration:none;border:1px solid var(--ink);
+  background:var(--ink);color:#fbfaf7;transition:transform .18s,box-shadow .18s,background .18s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(18,16,14,.20)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink);box-shadow:0 8px 20px rgba(18,16,14,.09)}
+.btn.soon{background:transparent;color:var(--ink-3);border-color:var(--line);
+  border-style:dashed;cursor:not-allowed;pointer-events:none}
+.btn.soon .tag{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* ---------- stats ---------- */
+.stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--paper-2);margin-top:74px}
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);max-width:var(--max);margin:0 auto}
+.stat{padding:34px 18px;text-align:center;border-right:1px solid var(--line)}
+.stat:last-child{border-right:none}
+.stat .num{font-family:var(--serif);font-size:40px;line-height:1;letter-spacing:-.01em}
+.stat .num .suf{font-size:20px;color:var(--gold);margin-left:1px}
+.stat .lbl{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-top:11px}
+
+/* ---------- sections ---------- */
+section{padding:92px 0}
+.sec-head{margin-bottom:46px;max-width:820px}
+.sec-num{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.sec-num::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(154,123,63,.4),transparent)}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4.4vw,46px);
+  line-height:1.14;letter-spacing:-.015em;margin:0 0 18px}
+h3{font-family:var(--serif);font-weight:400;font-size:25px;margin:44px 0 14px;letter-spacing:-.01em}
+p{margin:0 0 20px;color:var(--ink-2)}
+p.lead{font-size:19px;line-height:1.66;color:var(--ink-2)}
+.alt{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+strong{font-weight:600;color:var(--ink)}
+.mono{font-family:var(--mono);font-size:.9em;background:var(--paper-2);
+  border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+
+/* ---------- figures ---------- */
+figure{margin:38px 0;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:22px;box-shadow:0 1px 3px rgba(18,16,14,.04)}
+figure img{width:100%;height:auto;display:block;border-radius:7px}
+figcaption{font-size:14px;color:var(--ink-3);margin-top:18px;line-height:1.66;
+  padding-top:16px;border-top:1px solid var(--line)}
+figcaption b{color:var(--ink-2);font-weight:600}
+
+/* ---------- formula ---------- */
+.formula{background:var(--card);border:1px solid var(--line);border-left:2.5px solid var(--gold);
+  border-radius:0 12px 12px 0;padding:26px 30px;margin:26px 0}
+.formula .eq{font-family:var(--mono);font-size:15px;line-height:2.25;color:var(--ink);overflow-x:auto}
+.formula .eq .c{color:var(--ink-3)}
+.formula .note{font-size:14px;color:var(--ink-3);margin-top:16px;padding-top:15px;
+  border-top:1px solid var(--line)}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:30px 0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:660px}
+thead th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-weight:600;text-align:center;padding:15px 12px;border-bottom:1px solid var(--line);
+  background:var(--paper-2);white-space:nowrap}
+thead th:first-child{text-align:left}
+tbody td{padding:12px;text-align:center;border-bottom:1px solid var(--paper-2);
+  font-variant-numeric:tabular-nums}
+tbody td:first-child{text-align:left;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(154,123,63,.045)}
+tr.ours{background:rgba(154,123,63,.075)}
+tr.ours:hover{background:rgba(154,123,63,.11)}
+tr.ours td{font-weight:600}
+tr.human td{color:var(--ink-3);font-style:italic}
+tr.rule td{border-top:1px solid var(--line)}
+.best{font-weight:700;color:var(--gold)}
+.second{text-decoration:underline;text-decoration-color:rgba(154,123,63,.45);text-underline-offset:3px}
+.grp{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+  background:var(--paper-2);padding:9px 12px!important;text-align:left!important;font-weight:600}
+.tcap{font-size:13.5px;color:var(--ink-3);margin-top:14px;line-height:1.62}
+.yes{color:var(--ok);font-weight:600}
+.no{color:var(--bad);font-weight:600}
+
+/* ---------- takeaways ---------- */
+.takes{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin:38px 0}
+.take{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px 26px;
+  transition:transform .2s,box-shadow .2s}
+.take:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(18,16,14,.07)}
+.take h4{font-family:var(--serif);font-size:20px;font-weight:400;margin:0 0 10px;letter-spacing:-.01em}
+.take p{font-size:14.5px;margin:0;color:var(--ink-3);line-height:1.66}
+
+/* ---------- code ---------- */
+pre{background:#16140f;color:#e8e2d4;border-radius:12px;padding:24px 26px;overflow-x:auto;
+  font-family:var(--mono);font-size:13.5px;line-height:1.78;margin:24px 0}
+pre .c{color:#8a8272}
+pre .k{color:var(--gold-soft)}
+.copy-wrap{position:relative}
+.copy{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.09);color:#e8e2d4;
+  border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 12px;font-size:11.5px;
+  letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background .2s}
+.copy:hover{background:rgba(255,255,255,.2)}
+
+/* ---------- sibling ---------- */
+.sibling{display:flex;gap:26px;align-items:center;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:28px 30px;text-decoration:none;transition:transform .2s,box-shadow .2s;
+  margin-top:14px}
+.sibling:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(18,16,14,.09)}
+.sibling .mark{width:56px;height:56px;flex:none;border-radius:12px;background:var(--ink);color:var(--gold-soft);
+  display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:21px}
+.sibling .body{flex:1;min-width:0}
+.sibling .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.sibling h4{font-family:var(--serif);font-weight:400;font-size:21px;margin:0 0 5px}
+.sibling p{font-size:14px;color:var(--ink-3);margin:0}
+.sibling .arrow{font-size:20px;color:var(--ink-3);flex:none}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:52px 0 60px;background:var(--paper-2)}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:26px;flex-wrap:wrap}
+.foot p{font-size:13.5px;color:var(--ink-3);margin:0}
+.foot-links{display:flex;gap:24px;flex-wrap:wrap}
+.foot-links a{font-size:13.5px;color:var(--ink-3);text-decoration:none;transition:color .2s}
+.foot-links a:hover{color:var(--gold)}
+
+/* ---------- reveal ---------- */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none;transition:none}
+}
+
+/* ---------- responsive ---------- */
+@media(max-width:980px){
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+  .stat:nth-child(3){border-right:none}
+  .stat:nth-child(-n+3){border-bottom:1px solid var(--line)}
+}
+@media(max-width:760px){
+  .wrap,.nav-in{padding:0 20px}
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--paper);
+    border-bottom:1px solid var(--line);flex-direction:column;gap:0;padding:8px 20px 16px}
+  .nav-links.open{display:flex}
+  .nav-links a{padding:11px 0;font-size:14px;letter-spacing:.04em;text-transform:none}
+  .nav-toggle{display:block}
+  .hero{padding:56px 0 40px}
+  section{padding:64px 0}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .stat{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .stat:nth-child(2n){border-right:none}
+  .sibling{flex-direction:column;align-items:flex-start;gap:16px}
+  .formula{padding:20px}
+  figure{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a class="brand" href="#top">Stream<em>OPD</em></a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#ablations">Ablations</a></li>
+      <li><a href="#reproduce">Reproduce</a></li>
+      <li><a href="#cite">Cite</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-in">
+    <div class="eyebrow"><span class="dot"></span> Streaming Video Understanding &nbsp;·&nbsp; Post-Training</div>
+    <h1 class="title">Stream<span class="accent">OPD</span></h1>
+    <p class="subtitle">A Post-Training Recipe with Spatio-Temporal Cue Gating<br>for Streaming Video Understanding</p>
+
+    <p class="authors">
+      <span class="who">Keming Wu<sup>1</sup></span>
+      <span class="who">Baoyi Wang<sup>2</sup></span>
+      <span class="who">Kaichen Zhang<sup>3</sup></span>
+      <span class="who">Xiang An<sup>4</sup></span>
+      <span class="who">Zuhao Yang<sup>5</sup></span>
+      <span class="who">Sudong Wang<sup>6</sup></span>
+      <span class="who">Haowei Zhu<sup>1</sup></span>
+      <span class="who">Tingxuan Huang<sup>1</sup></span>
+      <span class="who">Hongcheng Gao<sup>1</sup></span>
+      <span class="who">Bin Wang<sup>1,✉</sup></span>
+    </p>
+    <p class="affils">
+      <sup>1</sup>Tsinghua University &nbsp;&nbsp;·&nbsp;&nbsp; <sup>2</sup>Zhejiang University &nbsp;&nbsp;·&nbsp;&nbsp;
+      <sup>3</sup>The University of Hong Kong &nbsp;&nbsp;·&nbsp;&nbsp; <sup>4</sup>LMMs-Lab<br>
+      <sup>5</sup>Nanyang Technological University &nbsp;&nbsp;·&nbsp;&nbsp;
+      <sup>6</sup>Hong Kong University of Science and Technology (Guangzhou)
+    </p>
+    <p class="notes"><sup style="color:var(--gold)">✉</sup>Corresponding author</p>
+
+    <div class="links">
+      <a class="btn soon" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Paper <span class="tag">soon</span>
+      </a>
+      <a class="btn" href="https://github.com/UniX-AI-Lab/StreamOPD">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.11-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
+        Code
+      </a>
+      <a class="btn soon" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8.5 13.5s1.3 1.6 3.5 1.6 3.5-1.6 3.5-1.6"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+        Models <span class="tag">soon</span>
+      </a>
+      <a class="btn soon" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/><path d="M4.5 11.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/></svg>
+        Datasets <span class="tag">soon</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stats-grid">
+      <div class="stat"><div class="num" data-to="84.55" data-dec="2">0</div><div class="lbl">StreamingBench</div></div>
+      <div class="stat"><div class="num" data-to="71.93" data-dec="2">0</div><div class="lbl">OVO excl. HLD</div></div>
+      <div class="stat"><div class="num" data-to="64.85" data-dec="2">0</div><div class="lbl">Video-MME</div></div>
+      <div class="stat"><div class="num" data-to="61.41" data-dec="2">0</div><div class="lbl">LongVideoBench</div></div>
+      <div class="stat"><div class="num" data-to="4" data-dec="0">0</div><div class="lbl">Frames at inference</div></div>
+      <div class="stat"><div class="num" data-to="25" data-dec="0">0<span class="suf">K</span></div><div class="lbl">Verifiable QA</div></div>
+    </div>
+  </div>
+</header>
+
+<section id="overview">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">01 / Overview</div>
+      <h2>Hold the inference path fixed, and the only lever left is the weights</h2>
+      <p class="lead">Streaming video understanding requires answering from the causally observed prefix of a
+      video that is still unfolding. Most systems attack this with memory banks, retrieval, or KV-cache
+      compression — yet a training-free recent-window baseline already matches them.</p>
+    </div>
+
+    <p class="rv">We take that as a hint and fix the inference path entirely: <strong>four recent frames at
+    1&nbsp;fps, no memory, no retrieval, no compression, and no reasoning trace at test time.</strong>
+    With the architecture and inference cost held constant, any gain has to come from the weights.
+    Under that constraint a 4B student reaches <strong>84.6 on StreamingBench</strong> and
+    <strong>69.3 OVO-Bench macro</strong>, passing its own 9B teacher on both, and beating HERMES-7B —
+    the strongest streaming system we compare against — by 5.1 and 10.1 points.</p>
+
+    <figure class="rv">
+      <img src="static/images/pipeline.png" alt="StreamOPD pipeline: thinking-mode training with a cue-augmented and a no-cue teacher forward, instruct-mode recent-window inference, and the verifiable-QA data pipeline.">
+      <figcaption><b>StreamOPD with ST-CueGate.</b> <b>(a)</b> During thinking-mode training the student
+      generates an on-policy response. The cue-augmented teacher forward provides the distillation target;
+      the no-cue forward provides a nested reference on the same frames and the same response. Their
+      token-wise log-likelihood ratio becomes a response-level weight that gates the OPD advantage.
+      <b>(b)</b> At inference the student uses the recent-window protocol — frames only, with no cue, no
+      memory module, and no generated thinking trace. <b>(c)</b> The 25k verifiable-QA pipeline.</figcaption>
+    </figure>
+
+    <h3 class="rv">Two parts</h3>
+    <p class="rv"><strong>StreamOPD</strong> is the recipe: a 25k verifiable video-QA pipeline, on-policy
+    distillation with teacher and student both in <em>thinking</em> mode, and deployment in <em>instruct</em>
+    mode. The training mode matters more than it looks — of the pairings we tried, only both-thinking
+    converges, while both-instruct and teacher-thinking/student-instruct collapse early. Pure RL is the
+    wrong tool here: teacher-free GRPO keeps its reward high while drifting to long rationales that break
+    the deployed direct-answer format.</p>
+
+    <figure class="rv">
+      <img src="static/images/training_modes.png" alt="Comparison of GRPO, OPD with short responses, and OPD with thinking responses.">
+      <figcaption><b>Why thinking-mode training.</b> GRPO drifts to long, format-incompatible outputs.
+      OPD on short instruct responses supervises too few token positions. Training in thinking mode
+      supplies dense token-level supervision, while instruct-mode deployment keeps the answer concise
+      and in the format the benchmarks expect.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="method" class="alt">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">02 / Method</div>
+      <h2>From giving privilege to gating it</h2>
+      <p class="lead">Once the recipe is fixed, the remaining question is not how big the teacher is but
+      <em>what it is shown</em> — and how much that actually helped.</p>
+    </div>
+
+    <p class="rv">A grounded spatio-temporal cue helps the teacher unevenly, and the unevenness is extreme.
+    Across 300,866 response tokens, <strong>56.5%</strong> of cue-versus-no-cue contrasts are essentially
+    zero and <strong>23.1%</strong> are negative, while the <strong>top 20% of positive tokens carry 82%
+    of the positive mass</strong>. Supplying the cue uniformly therefore spends most of the supervision
+    where the cue did nothing.</p>
+
+    <figure class="rv">
+      <img src="static/images/cue_delta_distribution.png" alt="Distribution and concentration of the cue-conditional log-likelihood ratio over 300,866 tokens.">
+      <figcaption><b>The cue's effect is sparse and heavy-tailed.</b> <b>(a)</b> Most token scores sit at
+      zero; the remainder spreads into both positive and negative shifts. <b>(b)</b> The top 20% of
+      positive-score tokens account for 82% of the total positive mass. This concentration is what
+      motivates measuring cue sensitivity before reweighting.</figcaption>
+    </figure>
+
+    <h3 class="rv">ST-CueGate</h3>
+    <p class="rv">The frozen teacher scores the <em>same</em> student response under two nested contexts
+    that differ only in cue presence. The contrast is aggregated into a response-level proxy, standardized
+    within a comparison group, and used to reweight the distillation advantage.</p>
+
+    <div class="formula rv">
+      <div class="eq">
+Δ<sub>t</sub> &nbsp;=&nbsp; log π<sub>τ</sub>(y<sub>t</sub> | q, c) − log π<sub>τ</sub>(y<sub>t</sub> | q) &nbsp;&nbsp;<span class="c">// per-token cue contrast</span><br>
+g &nbsp;&nbsp;=&nbsp; (1/T) Σ<sub>t</sub> Δ<sub>t</sub> &nbsp;&nbsp;<span class="c">// length-normalized response proxy</span><br>
+w &nbsp;&nbsp;=&nbsp; clip( 1 + α<sub>g</sub> · z(g), &nbsp;w<sub>min</sub>, w<sub>max</sub> ) &nbsp;&nbsp;<span class="c">// group-relative gate</span><br>
+A<sub>t</sub> &nbsp;=&nbsp; w · ( τ<sub>t</sub><sup>+</sup> − s<sub>t</sub> ) &nbsp;&nbsp;<span class="c">// gated OPD advantage</span>
+      </div>
+      <div class="note">z(·) standardizes with population statistics over a comparison group: the minibatch
+      at <span class="mono">n=1</span>, the sibling rollouts sharing a prompt at <span class="mono">n&gt;1</span>.
+      Defaults are α<sub>g</sub>&nbsp;=&nbsp;0.5 and [w<sub>min</sub>, w<sub>max</sub>]&nbsp;=&nbsp;[0,&nbsp;2].</div>
+    </div>
+
+    <figure class="rv">
+      <img src="static/images/prompts.png" alt="Prompt formats: the student receives the plain video question, while the teacher additionally receives a screened spatio-temporal cue.">
+      <figcaption><b>Where the cue lives.</b> The student receives the original video question; only the
+      teacher additionally receives the automatically screened spatio-temporal cue. ST-CueGate then scores
+      the same response a second time under the original no-cue prompt. The student prompt and the
+      inference protocol are never touched, which is what makes every cue variant a single-variable
+      comparison.</figcaption>
+    </figure>
+
+    <div class="takes rv">
+      <div class="take">
+        <h4>Relative, not absolute</h4>
+        <p>If every score in a group is negative, a less-negative response is still up-weighted. The gate
+        ranks within the group rather than against a fixed bar.</p>
+      </div>
+      <div class="take">
+        <h4>Response-level, by design</h4>
+        <p>Δ is per token, but one scalar multiplies every token advantage in the response. Per-token
+        gating loses 3.2 points on OVO — individual contrasts are too noisy to act as weights.</p>
+      </div>
+      <div class="take">
+        <h4>Exact degeneracies</h4>
+        <p><span class="mono">α_g = 0</span> gives w&nbsp;≡&nbsp;1 and recovers cue-only ViCuR exactly.
+        A singleton group gets a neutral gate; a rejected cue trains as standard OPD.</p>
+      </div>
+      <div class="take">
+        <h4>No extra GPUs</h4>
+        <p>The no-cue pass reuses the student's decoded frames and the same teacher pool. It costs
+        20–35% more time per step and touches training only through w.</p>
+      </div>
+    </div>
+
+    <h3 class="rv">The reference has to be cue removal</h3>
+    <p class="rv">The gating machinery is generic — any positive/negative view pair yields a weight.
+    Replacing the negative view with a temporally shuffled video (the V-Zero formulation) keeps the
+    mechanism but loses the gain. The requirement is clip-grounded provenance <em>with a cue-specific
+    reference</em>: hold the frames and the realized trajectory fixed, and remove only the cue.</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">03 / Results</div>
+      <h2>A 4B student that overtakes its 9B teacher</h2>
+      <p class="lead">Instruct mode, recent-4-frame window. Each configuration is trained with three seeds;
+      one model per run is selected on a held-out validation aggregate and evaluated on all benchmarks.
+      Entries are means over the three runs.</p>
+    </div>
+
+    <div class="tw rv">
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th><th>Frames</th><th>StreamingBench</th>
+            <th>OVO Real-Time</th><th>OVO Backward</th><th>OVO Macro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="human"><td>Human</td><td>—</td><td>91.46</td><td>93.2</td><td>92.3</td><td>92.77</td></tr>
+          <tr><td colspan="6" class="grp">Online / Streaming Video LLMs</td></tr>
+          <tr><td>Dispider-7B</td><td>1 fps</td><td>67.63</td><td>54.6</td><td>36.1</td><td>45.35</td></tr>
+          <tr><td>TimeChat-Online-7B</td><td>1 fps</td><td>75.28</td><td>61.9</td><td>41.7</td><td>51.80</td></tr>
+          <tr><td>StreamForest-7B</td><td>1 fps</td><td>77.26</td><td>61.2</td><td>52.0</td><td>56.60</td></tr>
+          <tr><td>HERMES-7B</td><td>1 fps</td><td>79.44</td><td>69.0</td><td>49.4</td><td>59.20</td></tr>
+          <tr><td colspan="6" class="grp">Post-Trained Models and References (StreamOPD, ours)</td></tr>
+          <tr><td>Qwen3.5-9B <em>(teacher)</em></td><td>4</td><td class="second">84.15</td><td class="second">82.0</td><td>53.9</td><td class="second">67.95</td></tr>
+          <tr><td>Qwen3.5-4B <em>(student)</em></td><td>4</td><td>77.87</td><td>70.6</td><td>48.8</td><td>59.71</td></tr>
+          <tr><td>&nbsp;&nbsp;+ OPD</td><td>4</td><td>83.91</td><td>80.5</td><td>51.2</td><td>65.89</td></tr>
+          <tr class="ours"><td>&nbsp;&nbsp;+ ST-CueGate <em>(OPD)</em></td><td>4</td><td class="best">84.55</td><td class="best">82.6</td><td class="best">56.0</td><td class="best">69.34</td></tr>
+          <tr class="ours"><td>&nbsp;&nbsp;+ ST-CueGate <em>(OPSD)</em></td><td>4</td><td>83.35</td><td>79.2</td><td class="best">56.0</td><td>67.60</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tcap rv">OVO-Bench per-track accuracy; Macro is the mean of the Real-Time and Backward
+    category means. <span class="best">Gold</span> marks the best value, <span class="second">underline</span>
+    the second best. All StreamOPD models are evaluated in instruct mode with a recent-4-frame window.</p>
+
+    <h3 class="rv">Teacher conditioning and gating</h3>
+    <p class="rv">All variants share an identical backbone, dataset, and optimizer on the same 25k pool,
+    so differences are attributable to the teacher condition alone.</p>
+
+    <div class="tw rv">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th><th>Grounded</th><th>StreamingBench</th>
+            <th>OVO (excl. HLD)</th><th>Video-MME</th><th>LongVideoBench</th><th>Avg.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Qwen3.5-4B <em>(student)</em></td><td>—</td><td>77.87</td><td>59.94</td><td>64.22</td><td>57.74</td><td>64.94</td></tr>
+          <tr class="rule"><td>OPD (n=1)</td><td>—</td><td>83.91</td><td>69.02</td><td>63.33</td><td>59.84</td><td>69.03</td></tr>
+          <tr><td>OPD (n=4)</td><td>—</td><td>83.83</td><td class="second">70.09</td><td>64.07</td><td class="second">61.26</td><td class="second">69.81</td></tr>
+          <tr><td>ExOPD (n=1)</td><td><span class="no">✗</span></td><td class="second">84.29</td><td>68.38</td><td>63.78</td><td>60.36</td><td>69.20</td></tr>
+          <tr><td>ViCuR cue-only (n=1)</td><td><span class="yes">✓</span></td><td>84.27</td><td>67.98</td><td>60.56</td><td>54.00</td><td>66.70</td></tr>
+          <tr><td>ViCuR cue-only (n=4)</td><td><span class="yes">✓</span></td><td>84.49</td><td>67.86</td><td class="second">64.11</td><td>60.73</td><td>69.30</td></tr>
+          <tr><td>V-Zero (n=4)</td><td><span class="yes">✓</span></td><td>83.99</td><td>67.71</td><td>61.67</td><td>60.06</td><td>68.36</td></tr>
+          <tr class="ours"><td>ST-CueGate (n=4)</td><td><span class="yes">✓</span></td><td class="best">84.55</td><td class="best">71.93</td><td class="best">64.85</td><td class="best">61.41</td><td class="best">70.69</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tcap rv">Grounded denotes a teacher-side signal derived from the same underlying training
+    clip. The OVO column excludes HLD. Avg. is the unweighted mean over the four benchmarks.</p>
+
+    <div class="takes rv">
+      <div class="take">
+        <h4>Distillation closes the gap</h4>
+        <p>OPD lifts StreamingBench 77.9&nbsp;→&nbsp;83.9, within 0.3 of the teacher, and OVO excluding HLD
+        by 9.1 points. Teacher-free GRPO merely matches the untrained student.</p>
+      </div>
+      <div class="take">
+        <h4>Gating beats supplying</h4>
+        <p>ST-CueGate improves on rollout-matched OPD across all four benchmarks and beats cue-only ViCuR
+        everywhere — the gain comes from weighting the cue, not from the cue itself.</p>
+      </div>
+      <div class="take">
+        <h4>No general-video tax</h4>
+        <p>Every other configuration ends up below the untrained student on Video-MME. ST-CueGate is the
+        only one that stays above the base model on all four benchmarks.</p>
+      </div>
+      <div class="take">
+        <h4>Past the teacher</h4>
+        <p>ST-CueGate exceeds the 9B teacher on six of nine OVO subtasks, on the OVO macro
+        (69.34 vs 67.95), and on StreamingBench (84.55 vs 84.15).</p>
+      </div>
+    </div>
+
+    <h3 class="rv">The abstention caveat</h3>
+    <p class="rv">OVO's HLD subtask scores <em>refusing</em> to answer unanswerable queries — a different
+    skill from streaming recall, so we report it separately. Larger-teacher distillation costs abstention:
+    HLD drops from 47.9 (student) to 38.7 (OPD), recovering to 45.7 with ST-CueGate. The loss is not
+    intrinsic to the recipe. Replacing the 9B teacher with a frozen copy of the student's own initial
+    policy — on-policy self-distillation — keeps most of the streaming gains and pushes
+    <strong>HLD to 57.0</strong>, above both the untrained student (47.9) and the 9B teacher (47.3).</p>
+  </div>
+</section>
+
+<section id="ablations" class="alt">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">04 / Ablations</div>
+      <h2>What the gate is sensitive to</h2>
+    </div>
+
+    <h3 class="rv">Grouping and granularity</h3>
+    <div class="tw rv">
+      <table>
+        <thead><tr><th>Gate setting</th><th>StreamingBench</th><th>OVO (excl. HLD)</th><th>Video-MME</th><th>LongVideoBench</th><th>Avg.</th></tr></thead>
+        <tbody>
+          <tr><td>n=1, batch, sequence</td><td>84.23</td><td>68.93</td><td class="best">65.11</td><td>59.69</td><td>69.49</td></tr>
+          <tr class="ours"><td>n=4, uid, sequence</td><td class="best">84.55</td><td class="best">71.93</td><td>64.85</td><td class="best">61.41</td><td class="best">70.69</td></tr>
+          <tr><td>n=4, uid, token</td><td>84.23</td><td>68.72</td><td>63.52</td><td>59.99</td><td>69.12</td></tr>
+          <tr><td>n=8, uid, sequence</td><td>84.11</td><td>68.81</td><td>64.41</td><td>60.66</td><td>69.50</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tcap rv">Token-wise gating loses most on OVO (−3.2) and LongVideoBench (−1.4): individual
+    token contrasts are too noisy to serve as independent weights, while aggregating them at the response
+    level gives a stabler signal.</p>
+
+    <h3 class="rv">Gate strength α<sub>g</sub></h3>
+    <div class="tw rv">
+      <table>
+        <thead><tr><th>α<sub>g</sub></th><th>StreamingBench</th><th>OVO (excl. HLD)</th><th>Video-MME</th><th>LongVideoBench</th><th>Avg.</th></tr></thead>
+        <tbody>
+          <tr><td>0.25</td><td>84.19</td><td>69.09</td><td>64.19</td><td>60.73</td><td>69.55</td></tr>
+          <tr class="ours"><td>0.50</td><td class="best">84.55</td><td class="best">71.93</td><td class="best">64.85</td><td class="best">61.41</td><td class="best">70.69</td></tr>
+          <tr><td>1.00</td><td>84.39</td><td>68.97</td><td>63.22</td><td>59.76</td><td>69.09</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tcap rv">Raising the strength to 1.0 consistently hurts: the likelihood contrast is most
+    useful as a moderate ranking signal rather than an aggressively amplified weight.</p>
+
+    <h3 class="rv">Teacher scale</h3>
+    <div class="tw rv">
+      <table>
+        <thead><tr><th>Teacher</th><th>StreamingBench</th><th>OVO (excl. HLD)</th><th>Video-MME</th><th>LongVideoBench</th><th>Avg.</th></tr></thead>
+        <tbody>
+          <tr class="ours"><td>Qwen3.5-9B</td><td class="best">84.55</td><td class="best">71.93</td><td class="best">64.85</td><td class="best">61.41</td><td class="best">70.69</td></tr>
+          <tr><td>Qwen3.5-27B</td><td>83.59</td><td>67.52</td><td>61.04</td><td>54.38</td><td>66.63</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tcap rv">The larger teacher is worse on all four benchmarks. This run reuses the 9B
+    optimization and gate settings without re-tuning, so read it as evidence that teacher scale alone does
+    not guarantee better on-policy supervision — not as a tuned upper bound for a 27B teacher.</p>
+  </div>
+</section>
+
+<section id="reproduce">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">05 / Reproduce</div>
+      <h2>Everything needed to rerun it</h2>
+      <p class="lead">The repository ships the patched trainer, the training and validation parquets, the
+      streaming evaluators, and the data-construction pipeline. One launcher per row of the tables above.</p>
+    </div>
+
+    <div class="copy-wrap rv">
+      <button class="copy" data-copy="qs">Copy</button>
+      <pre id="qs"><span class="c"># 1. environment — vLLM and flash-attn are built from source</span>
+git clone https://github.com/UniX-AI-Lab/StreamOPD.git &amp;&amp; cd StreamOPD
+uv venv /path/to/env --python python3.12 &amp;&amp; pip install -e ./verl --no-build-isolation
+
+<span class="c"># 2. point the shipped parquets at your local copy of the public videos</span>
+python tools/data/retarget_video_root.py --root /your/dataset/root --check-exists
+
+<span class="c"># 3. train — ST-CueGate, the headline configuration</span>
+ROLLOUT_N=4 CUE_GATE_GROUP_MODE=uid bash scripts/train/cuegate.sh
+
+<span class="c"># 4. merge the checkpoint and evaluate on four benchmarks</span>
+bash scripts/merge_checkpoint.sh checkpoints/&lt;experiment&gt;/global_step_&lt;N&gt;
+bash scripts/eval/run_all.sh   checkpoints/&lt;experiment&gt;/.../huggingface my_run 0,1,2,3
+bash scripts/eval/score_all.sh my_run</pre>
+    </div>
+
+    <p class="rv">Other rows are environment variables on the same launchers —
+    <span class="mono">TEACHER_MODEL=Qwen/Qwen3.5-4B</span> gives the self-distillation variant,
+    <span class="mono">CUE_GATE_ALPHA=0</span> reduces to cue-only ViCuR, and
+    <span class="mono">CUE_GATE_LEVEL=token</span> switches the gate granularity. Full walkthrough in the
+    <a href="https://github.com/UniX-AI-Lab/StreamOPD/tree/main/docs" style="color:var(--gold)">documentation</a>:
+    install, data, training, evaluation, and the method write-up with its negative results.</p>
+
+    <h3 class="rv">From the same lab</h3>
+    <a class="sibling rv" href="https://unix-ai-lab.github.io/WorldReasonBench/">
+      <div class="mark">WR</div>
+      <div class="body">
+        <div class="kicker">Related project</div>
+        <h4>WorldReasonBench</h4>
+        <p>Human-aligned stress testing of video generators as future world-state predictors — 436 curated
+        cases across four reasoning dimensions, plus a ~6K-pair preference benchmark.</p>
+      </div>
+      <div class="arrow">↗</div>
+    </a>
+  </div>
+</section>
+
+<section id="cite" class="alt">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div class="sec-num">Cite</div>
+      <h2>BibTeX</h2>
+    </div>
+    <div class="copy-wrap rv">
+      <button class="copy" data-copy="bib">Copy</button>
+      <pre id="bib">@article{wu2026streamopd,
+  title   = {StreamOPD: A Post-Training Recipe with Spatio-Temporal Cue Gating
+             for Streaming Video Understanding},
+  author  = {Wu, Keming and Wang, Baoyi and Zhang, Kaichen and An, Xiang and
+             Yang, Zuhao and Wang, Sudong and Zhu, Haowei and Huang, Tingxuan and
+             Gao, Hongcheng and Wang, Bin},
+  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <p>© 2026 StreamOPD · Released under Apache-2.0 · Page inspired by
+      <a href="https://nerfies.github.io/" style="color:var(--ink-3)">Nerfies</a></p>
+    <div class="foot-links">
+      <a href="https://github.com/UniX-AI-Lab/StreamOPD">GitHub</a>
+      <a href="https://unix-ai-lab.github.io/WorldReasonBench/">WorldReasonBench</a>
+      <a href="#top">Back to top</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var nav=document.getElementById("nav");
+  var onScroll=function(){nav.classList.toggle("scrolled",window.scrollY>8)};
+  onScroll();window.addEventListener("scroll",onScroll,{passive:true});
+
+  var toggle=document.getElementById("navToggle"),links=document.getElementById("navLinks");
+  toggle.addEventListener("click",function(){
+    var open=links.classList.toggle("open");
+    toggle.setAttribute("aria-expanded",open?"true":"false");
+  });
+  links.addEventListener("click",function(e){
+    if(e.target.tagName==="A"){links.classList.remove("open");toggle.setAttribute("aria-expanded","false");}
+  });
+
+  // reveal on scroll
+  var rv=document.querySelectorAll(".rv");
+  if("IntersectionObserver" in window){
+    var ro=new IntersectionObserver(function(es){
+      es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");ro.unobserve(e.target);}});
+    },{rootMargin:"0px 0px -8% 0px",threshold:.06});
+    rv.forEach(function(el){ro.observe(el)});
+  }else{rv.forEach(function(el){el.classList.add("in")});}
+
+  // stat count-up
+  var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var nums=document.querySelectorAll(".num[data-to]");
+  var run=function(el){
+    var to=parseFloat(el.dataset.to),dec=parseInt(el.dataset.dec,10)||0,suf=el.querySelector(".suf");
+    if(reduce){el.textContent=to.toFixed(dec);if(suf)el.appendChild(suf);return;}
+    var t0=null,dur=1250;
+    var step=function(ts){
+      if(!t0)t0=ts;
+      var p=Math.min((ts-t0)/dur,1),e=1-Math.pow(1-p,3);
+      el.textContent=(to*e).toFixed(dec);
+      if(suf)el.appendChild(suf);
+      if(p<1)requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  if("IntersectionObserver" in window){
+    var no=new IntersectionObserver(function(es){
+      es.forEach(function(e){if(e.isIntersecting){run(e.target);no.unobserve(e.target);}});
+    },{threshold:.5});
+    nums.forEach(function(el){no.observe(el)});
+  }else{nums.forEach(run);}
+
+  // active section in nav
+  var secs=[].slice.call(document.querySelectorAll("section[id]"));
+  var navA=[].slice.call(document.querySelectorAll(".nav-links a"));
+  if("IntersectionObserver" in window&&secs.length){
+    var so=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting)return;
+        navA.forEach(function(a){a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id)});
+      });
+    },{rootMargin:"-45% 0px -50% 0px"});
+    secs.forEach(function(s){so.observe(s)});
+  }
+
+  // copy buttons
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var el=document.getElementById(btn.dataset.copy);
+      if(!el)return;
+      var write=navigator.clipboard&&navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(el.innerText)
+        : Promise.reject();
+      write.then(function(){
+        var old=btn.textContent;btn.textContent="Copied";
+        setTimeout(function(){btn.textContent=old},1600);
+      }).catch(function(){
+        var r=document.createRange();r.selectNodeContents(el);
+        var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
