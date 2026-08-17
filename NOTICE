@@ -1,0 +1,11 @@
+StreamOPD
+Copyright 2026 The StreamOPD Authors
+
+This product includes software developed at ByteDance Ltd.:
+
+  verl (https://github.com/volcengine/verl)
+  Copyright 2023-2024 Bytedance Ltd. and/or its affiliates
+  Licensed under the Apache License, Version 2.0
+
+The copy of verl vendored under verl/ has been modified; the modifications are
+described in verl/PATCHES.md.

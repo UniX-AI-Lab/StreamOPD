@@ -1,0 +1,36 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+.venv/
+venv/
+env/
+
+# run artefacts
+checkpoints/
+results/
+logs/
+wandb/
+outputs/
+
+# benchmark videos and intermediate data products; the released parquets in data/ are tracked
+data/benchmarks/
+data/raw/
+data/cue/
+data/passrate/
+
+.DS_Store
+.idea/
+.vscode/
+
+# local assistant/editor state, never part of the release
+.claude/
+.cursor/
+.codex/
+.gemini/
+.aider*
+AGENTS.md
+CLAUDE.md

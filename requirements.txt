@@ -1,0 +1,26 @@
+# Pinned to the versions the reported runs used. vllm and flash-attn must be built from
+# source on CUDA 12.9 / GLIBC 2.28 machines, so install them as described in
+# docs/INSTALL.md rather than from this file.
+
+torch==2.11.0+cu129
+torchvision==0.26.0+cu129
+torchaudio==2.11.0+cu129
+
+# the patched verl vendored in this repository (pip install -e ./verl) pulls in
+# ray, tensordict, hydra-core, wandb, datasets, pyarrow and the rest of its stack
+
+transformers>=5.9
+accelerate
+decord==0.6.0
+qwen-vl-utils
+flash-linear-attention
+causal-conv1d==1.5.2
+
+pandas
+numpy
+pillow
+tqdm
+
+# evaluation
+lmms-eval
+openai            # client for the vLLM servers used by the data-construction tools
