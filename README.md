@@ -4,11 +4,8 @@
 
 **A Post-Training Recipe with Spatio-Temporal Cue Gating for Streaming Video Understanding**
 
-<!-- Once the preprint is live, drop the arXiv and Daily Paper badges in here:
-[![arXiv](https://img.shields.io/badge/Paper-000000?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/XXXX.XXXXX)
-[![Daily Paper](https://img.shields.io/badge/Daily_Paper-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/papers/XXXX.XXXXX)
--->
-
+[![arXiv](https://img.shields.io/badge/Paper-000000?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2608.16320)
+[![Daily Paper](https://img.shields.io/badge/Daily_Paper-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/papers/2608.16320)
 [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=google-chrome&logoColor=white)](https://unix-ai-lab.github.io/StreamOPD/)
 [![GitHub](https://img.shields.io/badge/Code-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/UniX-AI-Lab/StreamOPD)
 [![Model](https://img.shields.io/badge/Model-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate)
@@ -223,7 +220,7 @@ results are written up in [Method](docs/METHOD.md).
   author  = {Wu, Keming and Wang, Baoyi and Zhang, Kaichen and An, Xiang and
              Yang, Zuhao and Wang, Sudong and Zhu, Haowei and Huang, Tingxuan and
              Gao, Hongcheng and Wang, Bin},
-  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  journal = {arXiv preprint arXiv:2608.16320},
   year    = {2026}
 }
 ```
