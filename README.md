@@ -9,6 +9,7 @@
 [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=google-chrome&logoColor=white)](https://unix-ai-lab.github.io/StreamOPD/)
 [![GitHub](https://img.shields.io/badge/Code-000000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/UniX-AI-Lab/StreamOPD)
 [![Model](https://img.shields.io/badge/Model-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/UniX-Lab/StreamOPD-4B-ST-CueGate)
+[![Datasets](https://img.shields.io/badge/Datasets-FFD21E?style=for-the-badge&logo=huggingface&logoColor=000000)](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data)
 [![License](https://img.shields.io/badge/License-Apache_2.0-0040A1?style=for-the-badge)](LICENSE)
 
 [Install](docs/INSTALL.md) · [Data](docs/DATA.md) · [Training](docs/TRAINING.md) · [Evaluation](docs/EVALUATION.md) · [Method](docs/METHOD.md)
@@ -172,6 +173,16 @@ variants differ only in what you set:
 | `vzero.sh` | V-Zero (shuffled-video negative view) |
 | `afd.sh` | Asymmetric frame budget (appendix) |
 | `grpo.sh` | Teacher-free GRPO format-drift diagnostic |
+
+## Released dataset
+
+Training and validation annotations are available on Hugging Face as
+[`UniX-Lab/StreamOPD-Data`](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data).
+The release includes the `current`, `legacy_25118`, and `grpo_25114` configurations,
+video-source references, preprocessing notes, and a local data-preparation script.
+Videos are obtained separately from the upstream sources; see the
+[dataset card](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data)
+and [data guide](docs/DATA.md) for configuration differences and setup.
 
 ## Released checkpoint
 

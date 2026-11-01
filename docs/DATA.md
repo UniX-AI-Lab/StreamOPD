@@ -4,6 +4,35 @@ The parquets in `data/` hold questions, answers and video *references* — one r
 path plus a `[video_start, video_end]` window and a verifiable ground truth. The videos
 themselves come from public datasets you download separately.
 
+## Hugging Face release
+
+Download the annotation release from
+[`UniX-Lab/StreamOPD-Data`](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data).
+
+| Configuration | Training rows | Validation rows | Contents |
+|---|---:|---:|---|
+| `current` (default) | 25,106 | 326 | Shared OPD/CueGate pool after known input and source-overlap exclusions |
+| `legacy_25118` | 25,118 | 326 | Earlier training pool with explicit cue-instruction teacher prompts |
+| `grpo_25114` | 25,114 | 326 | Readability-filtered GRPO pool with direct-answer prompts |
+
+These are overlapping versions with different prompts and filtering. Choose the
+configuration for the experiment you intend to reproduce. The files shipped in this
+GitHub repository are listed separately below.
+
+```python
+from datasets import load_dataset
+
+data = load_dataset("UniX-Lab/StreamOPD-Data", "current")
+```
+
+The Hub release contains annotations and relative video paths, not video files.
+Its [video-source guide](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data/blob/main/docs/video_sources.md)
+explains downloading and extracting the source videos, and its
+[preparation script](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data/blob/main/scripts/prepare_local_data.py)
+resolves those paths into local training Parquet files. See the
+[processing notes](https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data/blob/main/docs/data_processing.md)
+for the release's privacy redactions, preprocessing and known limitations.
+
 ## Shipped files
 
 | File | Rows | Used by |
