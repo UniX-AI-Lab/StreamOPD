@@ -278,9 +278,9 @@ footer{border-top:1px solid var(--line);padding:52px 0 60px;background:var(--pap
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8.5 13.5s1.3 1.6 3.5 1.6 3.5-1.6 3.5-1.6"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
         Model
       </a>
-      <a class="btn soon" aria-disabled="true">
+      <a class="btn ghost" href="https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/><path d="M4.5 11.5v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6"/></svg>
-        Datasets <span class="tag">soon</span>
+        Datasets
       </a>
     </div>
   </div>
@@ -594,6 +594,15 @@ A<sub>t</sub> &nbsp;=&nbsp; w · ( τ<sub>t</sub><sup>+</sup> − s<sub>t</sub> 
 bash scripts/eval/score_all.sh streamopd_release</pre>
     </div>
 
+    <h3 class="rv">Get the training annotations</h3>
+    <p class="rv">The annotation release is available as
+    <a href="https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data" style="color:var(--gold)">UniX-Lab/StreamOPD-Data</a>,
+    with <span class="mono">current</span>, <span class="mono">legacy_25118</span>, and
+    <span class="mono">grpo_25114</span> configurations. It includes questions, answers, optional visual cues,
+    video-source references, and local preparation tools. Videos are downloaded separately;
+    the <a href="https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data/blob/main/docs/video_sources.md" style="color:var(--gold)">video-source guide</a>
+    explains how to obtain and organize them.</p>
+
     <h3 class="rv">Train it yourself</h3>
 
     <div class="copy-wrap rv">
@@ -662,6 +671,7 @@ bash scripts/eval/score_all.sh my_run</pre>
       <a href="https://nerfies.github.io/" style="color:var(--ink-3)">Nerfies</a></p>
     <div class="foot-links">
       <a href="https://github.com/UniX-AI-Lab/StreamOPD">GitHub</a>
+      <a href="https://huggingface.co/datasets/UniX-Lab/StreamOPD-Data">Datasets</a>
       <a href="https://unix-ai-lab.github.io/WorldReasonBench/">WorldReasonBench</a>
       <a href="#top">Back to top</a>
     </div>
